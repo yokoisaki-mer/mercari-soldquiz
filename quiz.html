@@ -259,9 +259,15 @@
     }
 
     .choice-btn.correct {
-      background: #e8f8ed;
-      border-color: #2db45d;
-      color: #1a7a3a;
+      background: #f0fdf4;
+      border-color: #22c55e;
+      color: #166534;
+    }
+
+    .choice-btn.selected-wrong {
+      background: #fef2f2;
+      border-color: #bd1616;
+      color: #bd1616;
     }
 
     .choice-btn.wrong {
@@ -719,6 +725,8 @@
       const val = parseInt(btn.textContent.replace(/[¥,]/g, ''), 10);
       if (val === q.selling) {
         btn.classList.add('correct');
+      } else if (val === selected && !isCorrect) {
+        btn.classList.add('selected-wrong');
       } else {
         btn.classList.add('wrong');
       }
