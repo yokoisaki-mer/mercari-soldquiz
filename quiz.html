@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アパレル実売価格クイズ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ─── SHARED ─── */
+    .screen {
+      width: 100%;
+      max-width: 480px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    /* ════════════════════════════
+       TOP SCREEN
+    ════════════════════════════ */
+    #screen-top {
+      min-height: 100vh;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .top-card {
+      background: #ffffff;
+      border-radius: 20px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    .top-photo-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+    }
+
+    .top-photo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    .top-photo-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, #ffffff 100%);
+    }
+
+    .top-body {
+      padding: 8px 28px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .top-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #feefef;
+      border: 1.5px solid #bd1616;
+      color: #bd1616;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 999px;
+    }
+
+    .top-title {
+      text-align: center;
+      font-size: clamp(26px, 7vw, 34px);
+      font-weight: 900;
+      line-height: 1.3;
+    }
+
+    .top-title .accent { color: #bd1616; }
+
+    .top-desc {
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      line-height: 1.9;
+    }
+
+    .top-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .top-stat {
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+
+    .top-stat .stat-num {
+      font-size: 28px;
+      font-weight: 900;
+      color: #bd1616;
+      display: block;
+      line-height: 1;
+    }
+
+    .top-stat .stat-label {
+      font-size: 13px;
+      color: #777;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: #bd1616;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      padding: 18px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+
+    /* ════════════════════════════
+       QUIZ SCREEN
+    ════════════════════════════ */
+    #screen-quiz {
+      min-height: 100vh;
+      padding-bottom: 32px;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      flex-shrink: 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #bd1616;
+      border-radius: 0 3px 3px 0;
+      transition: width 0.4s ease;
+    }
+
+    .quiz-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 10px;
+      width: 100%;
+    }
+
+    .quiz-status .question-label {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .quiz-status .correct-badge {
+      background: #fff;
+      border: 1.5px solid #ccc;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 5px 16px;
+    }
+
+    .quiz-card {
+      background: #fff;
+      border-radius: 20px;
+      margin: 0 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: calc(100% - 32px);
+    }
+
+    .quiz-question-text {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .quiz-img-wrap {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #eee;
+    }
+
+    .quiz-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid #d0d0d0;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      font-family: 'Noto Sans JP', sans-serif;
+      color: #1a1a1a;
+      padding: 15px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+      background: #f9f9f9;
+      border-color: #bbb;
+    }
+
+    .choice-btn.correct {
+      background: #e8f8ed;
+      border-color: #2db45d;
+      color: #1a7a3a;
+    }
+
+    .choice-btn.wrong {
+      background: #f0f0f0;
+      border-color: #ccc;
+      color: #999;
+    }
+
+    .choice-btn:disabled { cursor: default; }
+
+    .result-area {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .result-area .info-card {
+      margin-top: 10px;
+    }
+
+    .result-label {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .result-selling-label {
+      font-size: 13px;
+      color: #777;
+      text-align: center;
+    }
+
+    .result-price {
+      font-size: clamp(36px, 10vw, 48px);
+      font-weight: 900;
+      color: #bd1616;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .info-card {
+      background: #feefef;
+      border-left: 4px solid #bd1616;
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .info-cost { font-size: 15px; font-weight: 500; }
+
+    .info-profit {
+      font-size: clamp(20px, 5.5vw, 26px);
+      font-weight: 900;
+      color: #bd1616;
+    }
+
+    .info-profit .label { font-size: 14px; font-weight: 700; }
+
+    .info-divider {
+      border: none;
+      border-top: 1px solid #e8c8c8;
+      margin: 2px 0;
+    }
+
+    .info-comment { font-size: 13px; color: #333; line-height: 1.6; }
+
+    .btn-next {
+      display: none;
+      width: calc(100% - 32px);
+      margin: 16px 0 0;
+      background: #bd1616;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      padding: 18px;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 0.05em;
+      transition: opacity 0.2s;
+    }
+    .btn-next:hover { opacity: 0.88; }
+
+    /* ════════════════════════════
+       RESULT SCREEN
+    ════════════════════════════ */
+    #screen-result {
+      min-height: 100vh;
+      padding: 32px 16px 40px;
+      justify-content: flex-start;
+    }
+
+    .result-card {
+      background: #ffffff;
+      border-radius: 20px;
+      width: 100%;
+      padding: 28px 24px 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .result-announce-badge {
+      display: inline-flex;
+      align-items: center;
+      background: #bd1616;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 8px 24px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .score-box {
+      width: 100%;
+      background: #feefef;
+      border-radius: 14px;
+      padding: 22px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .score-box .score-prefix {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .score-box .score-num {
+      font-size: clamp(52px, 14vw, 72px);
+      font-weight: 900;
+      color: #bd1616;
+      line-height: 1;
+      margin: 0 4px;
+    }
+
+    .score-box .score-suffix {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .result-message {
+      width: 100%;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      text-align: left;
+    }
+
+    .result-message p { margin-bottom: 1.4em; }
+    .result-message p:last-child { margin-bottom: 0; }
+
+    .result-message .bold { font-weight: 700; }
+    .result-message .accent-bold { color: #bd1616; font-weight: 700; }
+
+    .btn-line {
+      width: 100%;
+      background: #06C755;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 17px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      padding: 18px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      letter-spacing: 0.03em;
+      transition: opacity 0.2s;
+    }
+    .btn-line:hover { opacity: 0.88; }
+
+    .btn-retry {
+      width: 100%;
+      background: #fff;
+      color: #bd1616;
+      border: 2px solid #bd1616;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      padding: 16px;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 0.03em;
+      transition: background 0.2s;
+    }
+    .btn-retry:hover { background: #feefef; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     TOP SCREEN
+════════════════════════════ -->
+<section id="screen-top" class="screen active">
+  <div class="top-card">
+    <div class="top-photo-wrap">
+      <img src="my_photo.jpg" alt="プロフィール写真">
+      <div class="top-photo-overlay"></div>
+    </div>
+    <div class="top-body">
+      <div class="top-badge">✨ いくらで売れたと思う？</div>
+      <h1 class="top-title">
+        アパレル<br>
+        <span class="accent">実売価格</span>クイズ
+      </h1>
+      <p class="top-desc">
+        実際の販売実績をもとにした<br>
+        全7問のクイズです！<br>
+        あなたの予想と、実際の販売価格を<br>
+        確かめてみてください✨
+      </p>
+      <div class="top-stats">
+        <div class="top-stat">
+          <span class="stat-num">7</span>
+          <span class="stat-label">問</span>
+        </div>
+        <div class="top-stat">
+          <span class="stat-num">3</span>
+          <span class="stat-label">択</span>
+        </div>
+        <div class="top-stat">
+          <span class="stat-num">3</span>
+          <span class="stat-label">分</span>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="startQuiz()">クイズをスタート ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════
+     QUIZ SCREEN
+════════════════════════════ -->
+<section id="screen-quiz" class="screen">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="quiz-status">
+    <span class="question-label" id="questionLabel">問題 1/7</span>
+    <span class="correct-badge" id="correctBadge">正解 0問</span>
+  </div>
+  <div class="quiz-card">
+    <p class="quiz-question-text">この商品はいくらで売れたでしょう？</p>
+    <div class="quiz-img-wrap">
+      <img id="quizImg" src="" alt="商品画像">
+    </div>
+    <div class="choices" id="choicesArea"></div>
+    <div class="result-area" id="resultArea">
+      <div class="result-label" id="resultLabel"></div>
+      <div class="result-selling-label">実際の売値</div>
+      <div class="result-price" id="resultPrice"></div>
+      <div class="info-card">
+        <div class="info-cost" id="infoCost"></div>
+        <div class="info-profit" id="infoProfit"></div>
+        <hr class="info-divider">
+        <div class="info-comment" id="infoComment"></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-next" id="btnNext" onclick="nextQuestion()">次の問題へ ▶</button>
+</section>
+
+<!-- ════════════════════════════
+     RESULT SCREEN
+════════════════════════════ -->
+<section id="screen-result" class="screen">
+  <div class="result-card">
+
+    <div class="result-announce-badge">＼ 結果発表 ／</div>
+
+    <div class="score-box">
+      <span class="score-prefix">7問中…</span>
+      <span class="score-num" id="finalScoreNum">0</span>
+      <span class="score-suffix">問正解！</span>
+    </div>
+
+    <div class="result-message">
+      <p>どうでしたか？</p>
+      <p>仕入れ値数百円のものが、<br>数千円、それ以上の価格で売れていく。</p>
+      <p>これが、メルカリアパレル物販の現実です。</p>
+      <p>もし商品を仕入れるときに、</p>
+      <p>
+        <span class="bold">店舗に行かなくていいとしたら？<br>
+        リサーチしなくていいとしたら？<br>
+        スマホで注文するだけで届くとしたら？</span>
+      </p>
+      <p>
+        <span class="accent-bold">このクイズの商品は、<br>
+        全部そのやり方で仕入れたものです。</span>
+      </p>
+      <p>気になった方は<br>下記ボタンより詳細をお伝えします。</p>
+    </div>
+
+    <a class="btn-line"
+       href="https://s.lmes.jp/landing-qr/2007298330-z0gvY7an?uLand=XPOh0O"
+       target="_blank" rel="noopener noreferrer">👗 仕入れ先について</a>
+
+    <button class="btn-retry" onclick="restartQuiz()">もう一度チャレンジする</button>
+
+  </div>
+</section>
+
+<script>
+  const quizData = [
+    {
+      selling: 4000,
+      choices: [1580, 2500, 4000],
+      cost: 500,
+      profit: 2700,
+      comment: 'たった1点でこの差額！しかも、仕入れはリサイクルショップではなく自宅で完結しています。',
+      hiddenImg: 'item1_hidden.jpg',
+      revealedImg: 'item1_revealed.jpg',
+    },
+    {
+      selling: 5000,
+      choices: [1350, 3480, 5000],
+      cost: 500,
+      profit: 3700,
+      comment: 'フランスの高級子供服ブランド。この商品も同じ仕入れルートから来ています！',
+      hiddenImg: 'item2_hidden.jpg',
+      revealedImg: 'item2_revealed.jpg',
+    },
+    {
+      selling: 8000,
+      choices: [3299, 6400, 8000],
+      cost: 800,
+      profit: 5600,
+      comment: 'ゴルフウェアはコアなファンが多く、需要が安定している穴場ジャンル！',
+      hiddenImg: 'item3_hidden.jpg',
+      revealedImg: 'item3_revealed.jpg',
+    },
+    {
+      selling: 17000,
+      choices: [4799, 8900, 17000],
+      cost: 1000,
+      profit: 14000,
+      comment: 'リサーチせずに仕入れてもこの利益…私もびっくりしましたｗ',
+      hiddenImg: 'item4_hidden.jpg',
+      revealedImg: 'item4_revealed.jpg',
+    },
+    {
+      selling: 6280,
+      choices: [3980, 4500, 6280],
+      cost: 900,
+      profit: 4500,
+      comment: '日本でも人気の高いマーガレットハウエル。これも同じ仕入先の商品です！',
+      hiddenImg: 'item5_hidden.jpg',
+      revealedImg: 'item5_revealed.jpg',
+    },
+    {
+      selling: 8100,
+      choices: [3700, 5999, 8100],
+      cost: 1000,
+      profit: 6000,
+      comment: 'こちらもマーガレットハウエル。シルク100%のため高値で売れました！',
+      hiddenImg: 'item6_hidden.jpg',
+      revealedImg: 'item6_revealed.jpg',
+    },
+    {
+      selling: 18800,
+      choices: [9750, 12500, 18800],
+      cost: 1000,
+      profit: 15000,
+      comment: 'ハンティングワールドは40〜60代の需要が根強いブランド。ここまでの商品、すべて同じ仕入れ先から仕入れています！',
+      hiddenImg: 'item7_hidden.jpg',
+      revealedImg: 'item7_revealed.jpg',
+    },
+  ];
+
+  let currentIndex = 0;
+  let correctCount = 0;
+  let answered = false;
+
+  function fmt(n) {
+    return '約¥' + n.toLocaleString('ja-JP');
+  }
+
+  function fmtPlain(n) {
+    return '¥' + n.toLocaleString('ja-JP');
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(function(s) {
+      s.classList.remove('active');
+    });
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function startQuiz() {
+    currentIndex = 0;
+    correctCount = 0;
+    answered = false;
+    showScreen('screen-quiz');
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    answered = false;
+    const q = quizData[currentIndex];
+    const total = quizData.length;
+
+    document.getElementById('progressBar').style.width = ((currentIndex / total) * 100) + '%';
+    document.getElementById('questionLabel').textContent = '問題 ' + (currentIndex + 1) + '/' + total;
+    document.getElementById('correctBadge').textContent = '正解 ' + correctCount + '問';
+
+    document.getElementById('quizImg').src = q.hiddenImg;
+    document.getElementById('quizImg').alt = '商品画像（モザイクあり）';
+
+    const choicesArea = document.getElementById('choicesArea');
+    choicesArea.innerHTML = '';
+    const shuffled = q.choices.slice().sort(function() { return Math.random() - 0.5; });
+    shuffled.forEach(function(val) {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = fmtPlain(val);
+      btn.addEventListener('click', function() { selectAnswer(val, btn); });
+      choicesArea.appendChild(btn);
+    });
+
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'none';
+  }
+
+  function selectAnswer(selected, clickedBtn) {
+    if (answered) return;
+    answered = true;
+
+    const q = quizData[currentIndex];
+    const isCorrect = selected === q.selling;
+    if (isCorrect) correctCount++;
+
+    document.getElementById('quizImg').src = q.revealedImg;
+    document.getElementById('quizImg').alt = '商品画像（モザイクなし）';
+
+    document.querySelectorAll('.choice-btn').forEach(function(btn) {
+      btn.disabled = true;
+      const val = parseInt(btn.textContent.replace(/[¥,]/g, ''), 10);
+      if (val === q.selling) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+      }
+    });
+
+    const resultArea = document.getElementById('resultArea');
+    resultArea.style.display = 'flex';
+
+    document.getElementById('resultLabel').textContent = isCorrect ? '✅ 正解！' : '❌ 残念…';
+    document.getElementById('resultPrice').textContent = fmtPlain(q.selling);
+    document.getElementById('infoCost').textContent = '仕入れ値　' + fmt(q.cost);
+    document.getElementById('infoProfit').innerHTML = '<span class="label">利益</span> ' + fmt(q.profit);
+    document.getElementById('infoComment').textContent = q.comment;
+    document.getElementById('correctBadge').textContent = '正解 ' + correctCount + '問';
+
+    const btnNext = document.getElementById('btnNext');
+    btnNext.style.display = 'block';
+    btnNext.textContent = currentIndex < quizData.length - 1 ? '次の問題へ ▶' : '結果を見る ▶';
+
+    setTimeout(function() {
+      btnNext.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 300);
+  }
+
+  function nextQuestion() {
+    currentIndex++;
+    if (currentIndex >= quizData.length) {
+      showResult();
+    } else {
+      document.getElementById('progressBar').style.width = ((currentIndex / quizData.length) * 100) + '%';
+      showScreen('screen-quiz');
+      loadQuestion();
+    }
+  }
+
+  function showResult() {
+    document.getElementById('finalScoreNum').textContent = correctCount;
+    showScreen('screen-result');
+  }
+
+  function restartQuiz() {
+    showScreen('screen-top');
+  }
+</script>
+</body>
+</html>
